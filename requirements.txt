@@ -1,10 +1,4 @@
-fastapi
-uvicorn
-python-multipart
-google-generativeai
-pydantic
-python-dotenv
-PyMuPDF
-pillow
 streamlit
 requests
+Pillow
+pandas
