@@ -6,3 +6,5 @@ pydantic
 python-dotenv
 PyMuPDF
 pillow
+streamlit
+requests
