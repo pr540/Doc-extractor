@@ -4,8 +4,5 @@ python-multipart
 google-generativeai
 pydantic
 python-dotenv
-pdf2image
 PyMuPDF
-streamlit
-pandas
 pillow

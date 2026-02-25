@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
-import pandas as pd
 import json
+import csv
 from PIL import Image
 import io
 import time
@@ -296,10 +296,14 @@ with tab1:
                     </div>
                     """, unsafe_allow_html=True)
                 
-            # Actions
-            col_a, col_b = st.columns(2)
-            csv = pd.DataFrame([data]).to_csv(index=False)
-            col_a.download_button("📥 Save CSV", csv, f"{doc_type}.csv", "text/csv")
+            # Download Button
+            output = io.StringIO()
+            writer = csv.DictWriter(output, fieldnames=data.keys())
+            writer.writeheader()
+            writer.writerow(data)
+            csv_data = output.getvalue()
+            
+            col_a.download_button("📥 Save CSV", csv_data, f"{doc_type}.csv", "text/csv")
             if col_b.button("🗑️ Clear Results"):
                 del st.session_state['result']
                 st.rerun()
@@ -339,10 +343,15 @@ with tab2:
                 batch_progress.progress((i + 1) / len(batch_files))
             
             status_text.success(f"✅ Batch completed! {len(results_list)} documents processed.")
-            st.table(pd.DataFrame(results_list))
+            st.table(results_list)
             
             # Master CSV
-            master_csv = pd.DataFrame(results_list).to_csv(index=False)
+            output = io.StringIO()
+            if results_list:
+                writer = csv.DictWriter(output, fieldnames=results_list[0].keys())
+                writer.writeheader()
+                writer.writerows(results_list)
+            master_csv = output.getvalue()
             st.download_button("📥 Download Master Report", master_csv, "batch_report.csv", "text/csv")
 
 with tab3:
