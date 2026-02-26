@@ -41,7 +41,7 @@ def extract_with_gemini(file_content: bytes, file_type: str) -> Dict[str, Any]:
     if not api_key:
         return {"error": "API Key not configured"}
     
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    model = genai.GenerativeModel('gemini-flash-latest')
     
     # Simple prompt for structured extraction
     prompt = """
