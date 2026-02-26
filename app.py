@@ -287,22 +287,136 @@ with tab1:
             
             # Key Data Points
             st.write("#### Structured Data")
-            for key, value in data.items():
-                with st.container():
+            # Check if this is a plot agreement or legal document with nested structures
+            def find_key(data_dict, keywords):
+                for k in data_dict.keys():
+                    if any(kw in k.lower() for kw in keywords):
+                        return k
+                return None
+
+            k_exec = find_key(data, ['executant', 'principal'])
+            k_att = find_key(data, ['attorney', 'agent'])
+            k_prop = find_key(data, ['property', 'details'])
+            k_bound = find_key(data, ['boundar'])
+
+            is_legal_doc = k_exec or k_att or k_prop or k_bound
+
+            if is_legal_doc:
+                # Custom UI for Legal Document
+                st.markdown("""
+                <style>
+                .legal-card {
+                    background-color: white !important;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                    color: #1e293b !important;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+                .legal-card h4 {
+                    color: #1e293b !important;
+                    margin-top: 0;
+                    margin-bottom: 15px;
+                    border-bottom: 1px solid #e2e8f0;
+                    padding-bottom: 10px;
+                }
+                .legal-val {
+                    color: #0f172a !important;
+                    font-weight: 600;
+                    font-size: 0.95rem;
+                }
+                .legal-label {
+                    font-weight: 700;
+                    color: #64748b !important;
+                    text-transform: uppercase;
+                    font-size: 0.75rem;
+                }
+                .boundary-box {
+                    text-align: center;
+                    padding: 15px;
+                    border-radius: 8px;
+                    color: #1e293b !important;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                }
+                .b-north { background-color: #e0f2fe !important; }
+                .b-south { background-color: #dcfce7 !important; }
+                .b-east { background-color: #fef3c7 !important; }
+                .b-west { background-color: #fce7f3 !important; }
+                </style>
+                """, unsafe_allow_html=True)
+
+                c1, c2 = st.columns(2)
+                
+                def render_dict(d):
+                    html = ""
+                    for k, v in d.items():
+                        html += f"<div style='margin-bottom:8px;'><span class='legal-label'>{k}:</span> <span class='legal-val'>{v}</span></div>"
+                    return html
+
+                with c1:
+                    if k_exec and isinstance(data[k_exec], dict):
+                        st.markdown(f'<div class="legal-card"><h4>👤 Executant / Principal</h4>{render_dict(data[k_exec])}</div>', unsafe_allow_html=True)
+                with c2:
+                    if k_att and isinstance(data[k_att], dict):
+                        st.markdown(f'<div class="legal-card"><h4>🤝 Attorney / Agent</h4>{render_dict(data[k_att])}</div>', unsafe_allow_html=True)
+                
+                if k_prop and isinstance(data[k_prop], dict):
+                    prop_html = ""
+                    p_items = list(data[k_prop].items())
+                    half = len(p_items) // 2 + len(p_items) % 2
+                    col_left = "".join([f"<div style='margin-bottom:8px;'><span class='legal-label'>{k}:</span> <span class='legal-val'>{v}</span></div>" for k, v in p_items[:half]])
+                    col_right = "".join([f"<div style='margin-bottom:8px;'><span class='legal-label'>{k}:</span> <span class='legal-val'>{v}</span></div>" for k, v in p_items[half:]])
+                    
                     st.markdown(f"""
-                    <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #6366f1;">
-                        <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8;">{key.replace('_', ' ')}</span><br>
-                        <span style="font-weight: 500;">{value}</span>
+                    <div class="legal-card">
+                        <h4>🏠 Property Details</h4>
+                        <div style="display: flex;">
+                            <div style="flex: 1;">{col_left}</div>
+                            <div style="flex: 1;">{col_right}</div>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
+
+                if k_bound and isinstance(data[k_bound], dict):
+                    st.markdown("<h4>📐 Boundaries</h4>", unsafe_allow_html=True)
+                    bc1, bc2, bc3, bc4 = st.columns(4)
+                    
+                    def find_val(d, kw):
+                        for k, v in d.items():
+                            if kw in k.lower(): return v
+                        return "N/A"
+                        
+                    with bc1: st.markdown(f"<div class='boundary-box b-north'><div style='font-size:0.7rem; color:#0284c7; font-weight:800; margin-bottom:5px;'>⬆️ NORTH</div>{find_val(data[k_bound], 'north')}</div>", unsafe_allow_html=True)
+                    with bc2: st.markdown(f"<div class='boundary-box b-south'><div style='font-size:0.7rem; color:#166534; font-weight:800; margin-bottom:5px;'>⬇️ SOUTH</div>{find_val(data[k_bound], 'south')}</div>", unsafe_allow_html=True)
+                    with bc3: st.markdown(f"<div class='boundary-box b-east'><div style='font-size:0.7rem; color:#d97706; font-weight:800; margin-bottom:5px;'>➡️ EAST</div>{find_val(data[k_bound], 'east')}</div>", unsafe_allow_html=True)
+                    with bc4: st.markdown(f"<div class='boundary-box b-west'><div style='font-size:0.7rem; color:#be185d; font-weight:800; margin-bottom:5px;'>⬅️ WEST</div>{find_val(data[k_bound], 'west')}</div>", unsafe_allow_html=True)
+
+            else:
+                for key, value in data.items():
+                    if isinstance(value, dict):
+                        val_str = "<br>".join([f"<b>{k}</b>: {v}" for k, v in value.items()])
+                    else:
+                        val_str = str(value)
+                        
+                    with st.container():
+                        st.markdown(f"""
+                        <div style="background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #6366f1;">
+                            <span style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8;">{key.replace('_', ' ')}</span><br>
+                            <span style="font-weight: 500;">{val_str}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
                 
             # Download Button
             output = io.StringIO()
-            writer = csv.DictWriter(output, fieldnames=data.keys())
-            writer.writeheader()
-            writer.writerow(data)
+            flat_data = {k: (json.dumps(v) if isinstance(v, dict) else v) for k, v in data.items()}
+            writer = csv.DictWriter(output, fieldnames=flat_data.keys() if flat_data else ['data'])
+            if flat_data:
+                writer.writeheader()
+                writer.writerow(flat_data)
             csv_data = output.getvalue()
             
+            col_a, col_b = st.columns(2)
             col_a.download_button("📥 Save CSV", csv_data, f"{doc_type}.csv", "text/csv")
             if col_b.button("🗑️ Clear Results"):
                 del st.session_state['result']
